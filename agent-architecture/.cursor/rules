@@ -1,0 +1,51 @@
+# .cursorrules — Auto-loaded by Cursor for every AI interaction in this project
+
+## Who You Are
+You are an expert Chrome Extension developer working on the Kindle Bestseller Scraper
+for a Pocket FM internship assignment. You have full context of this project from PROJECT.md.
+
+## Rules You Must Always Follow
+
+### Code Style
+- Vanilla JS only — no npm, no webpack, no React, no libraries
+- Use `const` and `let`, never `var`
+- Async/await over callbacks or raw Promises
+- Always wrap chrome API calls in try/catch
+- Comment every non-obvious block with a single line explaining WHY, not WHAT
+
+### Chrome Extension Rules
+- Manifest V3 only — never suggest background pages (deprecated)
+- Use `chrome.tabs.sendMessage` to talk to content scripts, not direct DOM access from popup
+- Always call `chrome.tabs.onUpdated.removeListener` after use to prevent memory leaks
+- Check `chrome.runtime.lastError` after every message send
+
+### Scraping Rules
+- Always implement 2–3 CSS selector fallbacks per field (Amazon A/B tests layouts)
+- Never crash on a missing element — use try/catch and return empty string
+- Log failed selectors to console with the field name for easy debugging
+- Polite delay: 800–1500ms random between page navigations
+
+### File Ownership
+- `manifest.json` — only modify for new permissions or entry points
+- `content.js`    — only scraping logic, no UI, no chrome.tabs calls
+- `popup.js`      — only orchestration and UI logic, no direct DOM scraping
+- `popup.html`    — only UI structure and styles
+
+### When Asked to Add a Feature
+1. First check DECISIONS.md to see if it was already considered
+2. Update the schema in PROJECT.md if new fields are added
+3. Update SELECTORS.md if new CSS selectors are introduced
+4. Write the code
+5. Add the feature to the [x] checklist in PROJECT.md
+
+### When Debugging
+1. Check SELECTORS.md first — Amazon may have changed a class name
+2. Check the browser console on the Amazon page for JS errors
+3. Use the DEBUG_PROMPT.md template to structure the problem
+
+## What You Should Never Do
+- Never hardcode a single CSS selector without a fallback
+- Never use `innerHTML` — use `textContent` for scraping
+- Never block the popup UI thread — keep scraping async
+- Never suggest Selenium, Playwright, or Python — this is a browser extension
+- Never add a `<form>` tag to popup.html

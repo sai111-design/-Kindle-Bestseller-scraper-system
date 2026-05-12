@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Kindle Scraper</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Mulish:wght@300;400;600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0c0c0f;
+    --surface: #16161c;
+    --surface2: #1e1e28;
+    --border: #2a2a35;
+    --accent: #ff6b35;
+    --accent2: #ffd166;
+    --text: #f0eff4;
+    --muted: #7b7a8a;
+    --success: #06d6a0;
+    --error: #ef476f;
+    --info: #56ccf2;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 380px;
+    min-height: 480px;
+    font-family: 'Mulish', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    overflow-x: hidden;
+  }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #1a1025 0%, #0f1923 100%);
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute; top: -20px; right: -20px;
+    width: 100px; height: 100px;
+    background: radial-gradient(circle, rgba(255,107,53,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header::after {
+    content: '';
+    position: absolute; bottom: -30px; left: -10px;
+    width: 80px; height: 80px;
+    background: radial-gradient(circle, rgba(255,209,102,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-size: 16px; font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .logo span { color: var(--accent); }
+  .badge {
+    font-size: 9px; font-weight: 600; letter-spacing: 1.5px;
+    text-transform: uppercase;
+    background: rgba(255,107,53,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(255,107,53,0.3);
+    padding: 3px 8px; border-radius: 20px;
+  }
+  .subtitle {
+    font-size: 11px; color: var(--muted); font-weight: 300;
+    line-height: 1.4;
+  }
+
+  /* ── Tabs ── */
+  .tab-bar {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 8px;
+    font-family: 'Mulish', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+    background: rgba(255,107,53,0.05);
+  }
+  .tab-btn svg { width: 13px; height: 13px; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── Body ── */
+  .body { padding: 16px 20px; }
+
+  /* ── Category Switcher ── */
+  .category-section {
+    margin-bottom: 14px;
+  }
+  .category-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  .category-select {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: 'Mulish', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237b7a8a' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+  }
+  .category-select:hover { border-color: var(--accent); }
+  .category-select:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(255,107,53,0.15); }
+  .category-select option {
+    background: var(--surface);
+    color: var(--text);
+  }
+
+  /* ── Pagination Toggle ── */
+  .toggle-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .toggle-label {
+    font-size: 12px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .toggle-label small {
+    font-size: 10px;
+    color: var(--muted);
+    font-weight: 300;
+  }
+  .toggle-switch {
+    position: relative;
+    width: 36px; height: 20px;
+    cursor: pointer;
+  }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--border);
+    border-radius: 10px;
+    transition: background 0.2s;
+  }
+  .toggle-switch input:checked + .toggle-track {
+    background: var(--accent);
+  }
+  .toggle-knob {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    pointer-events: none;
+  }
+  .toggle-switch input:checked ~ .toggle-knob {
+    transform: translateX(16px);
+  }
+
+  /* ── Page indicator ── */
+  .page-indicator {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .page-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--muted); flex-shrink: 0;
+    transition: background 0.3s;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  .page-dot.on-list { background: var(--success); }
+  .page-dot.on-book { background: var(--accent2); }
+  .page-dot.off    { background: var(--error); }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .page-text { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .page-text strong { color: var(--text); display: block; margin-bottom: 1px; }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    margin-bottom: 14px;
+    display: none;
+  }
+  .progress-wrap.visible { display: block; }
+  .progress-label {
+    display: flex; justify-content: space-between;
+    font-size: 11px; color: var(--muted); margin-bottom: 6px;
+  }
+  .progress-track {
+    height: 5px; background: var(--border); border-radius: 3px; overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 3px;
+    width: 0%; transition: width 0.4s ease;
+    position: relative;
+  }
+  .progress-fill::after {
+    content: '';
+    position: absolute; top: 0; right: 0; bottom: 0;
+    width: 30px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2));
+    animation: shimmer 1.5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0% { opacity: 0; }
+    50% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  /* ── Steps ── */
+  .steps-list {
+    display: none;
+    flex-direction: column; gap: 4px;
+    margin-bottom: 14px;
+  }
+  .steps-list.visible { display: flex; }
+  .step-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 11px; color: var(--muted);
+    transition: all 0.2s;
+  }
+  .step-row.active { background: rgba(255,107,53,0.08); color: var(--text); }
+  .step-row.done   { background: rgba(6,214,160,0.08);  color: var(--success); }
+  .step-icon { font-size: 13px; width: 18px; text-align: center; }
+  .step-spinner {
+    width: 13px; height: 13px;
+    border: 1.5px solid var(--accent);
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Stats strip ── */
+  .stats-strip {
+    display: none;
+    gap: 0;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .stats-strip.visible { display: flex; }
+  .stat {
+    flex: 1; padding: 10px 8px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; color: var(--accent); }
+  .stat-lbl { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px; }
+
+  /* ── Buttons ── */
+  .btn {
+    width: 100%;
+    font-family: 'Mulish', sans-serif;
+    font-size: 13px; font-weight: 600;
+    padding: 12px;
+    border: none; border-radius: var(--radius);
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    letter-spacing: 0.2px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #ff8c42);
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(255,107,53,0.35);
+    margin-bottom: 8px;
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(255,107,53,0.45); }
+  .btn-primary:active { transform: translateY(0); }
+  .btn-primary:disabled { background: #2a2a35; color: var(--muted); box-shadow: none; cursor: not-allowed; transform: none; }
+
+  .btn-dl {
+    background: rgba(6,214,160,0.12);
+    color: var(--success);
+    border: 1px solid rgba(6,214,160,0.25);
+    margin-bottom: 8px;
+  }
+  .btn-dl:hover { background: rgba(6,214,160,0.2); }
+  .btn-dl:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-sheets {
+    background: rgba(86,204,242,0.1);
+    color: var(--info);
+    border: 1px solid rgba(86,204,242,0.25);
+    margin-bottom: 8px;
+  }
+  .btn-sheets:hover { background: rgba(86,204,242,0.18); }
+  .btn-sheets:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-sheets .copied-text {
+    display: inline; transition: all 0.2s;
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    font-size: 11px; padding: 8px;
+  }
+  .btn-ghost:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ── Alert ── */
+  .alert {
+    display: none;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 11px; line-height: 1.5;
+    margin-bottom: 12px;
+  }
+  .alert.visible { display: block; }
+  .alert.error { background: rgba(239,71,111,0.12); border: 1px solid rgba(239,71,111,0.3); color: #ff8fab; }
+  .alert.info  { background: rgba(255,209,102,0.08); border: 1px solid rgba(255,209,102,0.2); color: var(--accent2); }
+  .alert.success { background: rgba(6,214,160,0.1); border: 1px solid rgba(6,214,160,0.3); color: var(--success); }
+
+  /* ── Schedule Panel ── */
+  .schedule-section {
+    padding: 16px 20px;
+  }
+  .schedule-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 14px;
+  }
+  .schedule-card h3 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .schedule-card h3 svg { width: 16px; height: 16px; }
+  .interval-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .interval-row label {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .interval-select {
+    flex: 1;
+    padding: 8px 10px;
+    font-family: 'Mulish', sans-serif;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+  }
+  .interval-select:focus { border-color: var(--accent); }
+  .interval-select option { background: var(--bg); color: var(--text); }
+  .last-run {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    line-height: 1.6;
+  }
+  .last-run strong { color: var(--text); }
+  .last-run .run-time { color: var(--accent2); }
+
+  /* ── Footer ── */
+  .footer {
+    padding: 10px 20px 14px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-text { font-size: 10px; color: var(--muted); }
+  .counter { font-size: 10px; color: var(--muted); }
+  .counter span { color: var(--accent2); font-weight: 600; }
+
+  /* ── Tooltip ── */
+  .tooltip {
+    position: fixed;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--success);
+    color: var(--bg);
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 20px;
+    pointer-events: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 100;
+  }
+  .tooltip.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Kindle<span>Scraper</span></div>
+    <span class="badge">Pocket FM</span>
+  </div>
+  <div class="subtitle" id="headerSubtitle">Kindle bestsellers → CSV in one click</div>
+</div>
+
+<!-- Tab Bar -->
+<div class="tab-bar">
+  <button class="tab-btn active" data-tab="scrape" id="tabScrape">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    Scrape
+  </button>
+  <button class="tab-btn" data-tab="schedule" id="tabSchedule">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    Schedule
+  </button>
+</div>
+
+<!-- ═══════════ SCRAPE TAB ═══════════ -->
+<div class="tab-panel active" id="panelScrape">
+  <div class="body">
+
+    <!-- Category Switcher -->
+    <div class="category-section">
+      <div class="category-label">Category</div>
+      <select class="category-select" id="categorySelect">
+        <option value="paranormal-romance" data-name="Paranormal Romance">📚 Paranormal Romance</option>
+        <option value="romance" data-name="Romance">💝 Romance</option>
+        <option value="fantasy" data-name="Fantasy">🐉 Fantasy</option>
+        <option value="science-fiction" data-name="Science Fiction">🚀 Science Fiction</option>
+        <option value="sci-fi-fantasy" data-name="Science Fiction & Fantasy">🌌 Science Fiction & Fantasy</option>
+        <option value="mystery" data-name="Mystery">🔎 Mystery</option>
+        <option value="thriller" data-name="Thriller">🎯 Thriller</option>
+        <option value="mystery-thriller" data-name="Mystery, Thriller & Suspense">🔪 Mystery, Thriller & Suspense</option>
+        <option value="horror" data-name="Horror">👻 Horror</option>
+        <option value="literature" data-name="Literature & Fiction">📜 Literature & Fiction</option>
+        <option value="self-help" data-name="Self-Help">🌟 Self-Help</option>
+        <option value="kindle-ebooks" data-name="Kindle eBooks (All)">📖 Kindle eBooks (All)</option>
+      </select>
+    </div>
+
+    <!-- Pagination Toggle -->
+    <div class="toggle-row">
+      <div class="toggle-label">
+        Scrape all pages
+        <small>(50 books)</small>
+      </div>
+      <label class="toggle-switch">
+        <input type="checkbox" id="paginationToggle" checked/>
+        <span class="toggle-track"></span>
+        <span class="toggle-knob"></span>
+      </label>
+    </div>
+
+    <!-- Server indicator -->
+    <div class="page-indicator" id="pageIndicator">
+      <div class="page-dot" id="pageDot"></div>
+      <div class="page-text">
+        <strong id="pageStatus">Checking server…</strong>
+        <span id="pageHint"></span>
+      </div>
+    </div>
+
+    <!-- Alert -->
+    <div class="alert" id="alert"></div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap" id="progressWrap">
+      <div class="progress-label">
+        <span id="progressLabel">Initializing…</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps-list" id="stepsList">
+      <div class="step-row" id="s1">
+        <span class="step-icon">⚡</span>
+        <span>Connecting to local server</span>
+      </div>
+      <div class="step-row" id="s2">
+        <span class="step-icon">🤖</span>
+        <span>Selenium is scraping data...</span>
+      </div>
+      <div class="step-row" id="s3">
+        <span class="step-icon">✅</span>
+        <span>Data processed & ready</span>
+      </div>
+    </div>
+
+    <!-- Main Scrape Button -->
+    <button class="btn btn-primary" id="scrapeBtn">
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
+      Scrape Amazon Now
+    </button>
+
+    <!-- Stats -->
+    <div class="stats-strip" id="statsStrip">
+      <div class="stat">
+        <div class="stat-val" id="statBooks">—</div>
+        <div class="stat-lbl">Books</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statRating">—</div>
+        <div class="stat-lbl">Avg ★</div>
+      </div>
+      <div class="stat">
+        <div class="stat-val" id="statPrice">—</div>
+        <div class="stat-lbl">Avg $</div>
+      </div>
+    </div>
+
+    <button class="btn btn-dl" id="downloadBtn" disabled>
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"/></svg>
+      Download CSV
+    </button>
+
+    <button class="btn btn-sheets" id="sheetsBtn" disabled>
+      <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>
+      Copy for Google Sheets
+    </button>
+
+    <button class="btn btn-ghost" id="resetBtn" style="display:none">
+      Reset
+    </button>
+
+  </div>
+</div>
+
+<!-- ═══════════ SCHEDULE TAB ═══════════ -->
+<div class="tab-panel" id="panelSchedule">
+  <div class="schedule-section">
+
+    <div class="schedule-card">
+      <h3>
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Scheduled Scraping
+      </h3>
+
+      <div class="toggle-row" style="margin-bottom:0; border:none; padding:0; background:transparent;">
+        <div class="toggle-label">
+          Auto-scrape enabled
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="scheduleToggle"/>
+          <span class="toggle-track"></span>
+          <span class="toggle-knob"></span>
+        </label>
+      </div>
+
+      <div class="interval-row">
+        <label for="intervalSelect">Run every</label>
+        <select class="interval-select" id="intervalSelect">
+          <option value="1">1 hour</option>
+          <option value="6">6 hours</option>
+          <option value="12">12 hours</option>
+          <option value="24" selected>24 hours</option>
+          <option value="48">48 hours</option>
+          <option value="168">7 days</option>
+        </select>
+      </div>
+
+      <div class="last-run" id="lastRunInfo">
+        No scheduled runs yet.
+      </div>
+    </div>
+
+    <div class="schedule-card">
+      <h3>
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        How It Works
+      </h3>
+      <div style="font-size:11px; color:var(--muted); line-height:1.7;">
+        <div style="margin-bottom:6px;">When enabled, the extension will:</div>
+        <div>1. Open a background tab at the scheduled time</div>
+        <div>2. Scrape the selected category's list page</div>
+        <div>3. Store results & show a badge count</div>
+        <div>4. Close the background tab automatically</div>
+        <div style="margin-top:8px; color:var(--accent2);">⚡ Chrome must be running for schedules to fire.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<!-- Footer -->
+<div class="footer">
+  <span class="footer-text" id="footerCategory">Amazon Kindle · Paranormal Romance</span>
+  <span class="counter" id="footerCount"></span>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>
